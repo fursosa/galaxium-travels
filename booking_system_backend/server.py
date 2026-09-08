@@ -17,6 +17,7 @@ from schemas import (
     UserOut,
     UserRegistration,
 )
+from routers import booking_detail
 from seed import seed
 from services import booking, flight, user
 
@@ -59,6 +60,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(booking_detail.router)
 
 
 @app.get("/", tags=["Health"])

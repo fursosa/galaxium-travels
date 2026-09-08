@@ -31,6 +31,12 @@ class FlightQueryParams(BaseModel):
 
 
 class FlightOut(BaseModel):
+    """Serialised flight returned from the API.
+
+    Prices for all three seat classes are computed from ``base_price``
+    and included so that clients don't need to know the multipliers.
+    """
+
     flight_id: int
     origin: str
     destination: str
@@ -49,6 +55,13 @@ class FlightOut(BaseModel):
 
 
 class BookingRequest(BaseModel):
+    """Request body for ``POST /book``.
+
+    Both ``user_id`` and ``name`` are required.  The backend validates that
+    ``name`` matches the account registered for ``user_id`` — a mismatch
+    returns a ``NAME_MISMATCH`` error.
+    """
+
     user_id: int
     name: str
     flight_id: int
@@ -56,6 +69,8 @@ class BookingRequest(BaseModel):
 
 
 class BookingOut(BaseModel):
+    """Serialised booking returned from the API."""
+
     booking_id: int
     user_id: int
     flight_id: int
@@ -68,11 +83,15 @@ class BookingOut(BaseModel):
 
 
 class UserRegistration(BaseModel):
+    """Request body for ``POST /register``."""
+
     name: str
     email: str
 
 
 class UserOut(BaseModel):
+    """Serialised user returned from the API."""
+
     user_id: int
     name: str
     email: str
@@ -81,6 +100,22 @@ class UserOut(BaseModel):
 
 
 class ErrorResponse(BaseModel):
+    """Structured error returned by all service functions on failure.
+
+    Service functions return ``SomeModel | ErrorResponse`` instead of raising
+    exceptions.  Callers use ``isinstance(result, ErrorResponse)`` to detect
+    failures.  The REST layer then maps ``error_code`` to an HTTP status code.
+
+    Attributes:
+        success: Always ``False`` — lets clients distinguish errors from
+            successful responses with a simple ``result.success`` check.
+        error: Short human-readable message (e.g. ``"User not found"``).
+        error_code: Machine-readable identifier for branching logic
+            (e.g. ``"USER_NOT_FOUND"``, ``"NAME_MISMATCH"``).
+        details: Optional extended explanation useful for debugging or
+            surfacing to end users.
+    """
+
     success: bool = False
     error: str
     error_code: str

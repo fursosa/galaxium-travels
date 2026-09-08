@@ -1,3 +1,9 @@
+"""User service — registration and lookup of traveller accounts.
+
+All public functions return a Union type (``SomeModel | ErrorResponse``)
+rather than raising exceptions.
+"""
+
 import re
 
 from sqlalchemy.orm import Session
@@ -13,7 +19,20 @@ def is_valid_email(email: str) -> bool:
 
 
 def register_user(db: Session, name: str, email: str) -> UserOut | ErrorResponse:
-    """Register a new user with a name and unique email."""
+    """Register a new user with a name and unique email address.
+
+    The email is normalised to lowercase before storage and uniqueness check.
+
+    Args:
+        db: SQLAlchemy database session.
+        name: Display name for the new user.
+        email: Email address — normalised to lowercase; must be unique.
+
+    Returns:
+        ``UserOut`` with the newly assigned ``user_id`` on success.
+        ``ErrorResponse`` with error code ``INVALID_EMAIL`` or
+        ``EMAIL_EXISTS`` on failure.
+    """
     email = email.lower()
     
     if not is_valid_email(email):
@@ -39,7 +58,21 @@ def register_user(db: Session, name: str, email: str) -> UserOut | ErrorResponse
 
 
 def get_user(db: Session, name: str, email: str) -> UserOut | ErrorResponse:
-    """Retrieve a user's information by name and email."""
+    """Retrieve a user's information by name and email.
+
+    Both ``name`` and ``email`` must match a single record.  Email is
+    normalised to lowercase before the query.
+
+    Args:
+        db: SQLAlchemy database session.
+        name: The user's display name.
+        email: The user's email address (case-insensitive).
+
+    Returns:
+        ``UserOut`` on success.
+        ``ErrorResponse`` with error code ``INVALID_EMAIL`` or
+        ``USER_NOT_FOUND`` on failure.
+    """
     email = email.lower()
     
     if not is_valid_email(email):
@@ -60,7 +93,22 @@ def get_user(db: Session, name: str, email: str) -> UserOut | ErrorResponse:
     
 
 def update_user(db: Session, user_id: int, name: str, email: str) -> UserOut | ErrorResponse:
-    """Update an existing user's name and email."""
+    """Update an existing user's name and email address.
+
+    Email is normalised to lowercase.  No format validation is performed
+    on update — the caller is responsible for validation if required.
+
+    Args:
+        db: SQLAlchemy database session.
+        user_id: ID of the user to update.
+        name: New display name.
+        email: New email address — normalised to lowercase.
+
+    Returns:
+        ``UserOut`` with updated fields on success.
+        ``ErrorResponse`` with error code ``USER_NOT_FOUND`` if no user
+        with the given ID exists.
+    """
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         return ErrorResponse(

@@ -57,7 +57,6 @@ galaxium-travels/
 ├── docker-compose.yml                   Backend + frontend + optional Java hold service
 ├── start.sh                             Local dev quick-start wrapper
 ├── test.sh                              E2E test suite wrapper
-├── reset.sh                             Post-demo cleanup
 └── AGENTS.md                            Critical patterns for AI agents
 ```
 
@@ -173,16 +172,20 @@ Each class has independent seat counters. A sold-out class doesn't block booking
 
 ## MCP tools (AI agent API)
 
-The backend exposes six tools at `/mcp`:
+The backend exposes tools at `/mcp` auto-generated from all FastAPI routes:
 
 | Tool | Description |
 |---|---|
-| `list_flights` | List all available flights |
-| `book_flight` | Book a seat (user_id, name, flight_id, seat_class) |
-| `get_bookings` | Get all bookings for a user |
-| `cancel_booking` | Cancel a booking by ID |
-| `register_user` | Register a new user |
-| `get_user_id` | Look up a user by name + email |
+| `get_flights` | List all available flights with optional filtering |
+| `book_flight_endpoint` | Book a seat (user_id, name, flight_id, seat_class) |
+| `get_user_bookings` | Get all bookings for a user |
+| `cancel_booking_endpoint` | Cancel a booking by ID |
+| `register_user_endpoint` | Register a new user |
+| `get_user_endpoint` | Look up a user by name + email |
+| `create_quote` | Create a price quote via Java hold service |
+| `create_hold` | Reserve a seat hold from a quote |
+| `confirm_hold` | Confirm a hold into a real booking |
+| `release_hold` | Release a hold without booking |
 
 ## Testing
 
@@ -289,7 +292,9 @@ Removes demo branches, database files, and build artifacts. See `DEMO_RUNBOOK.md
 ## Further reading
 
 - **[AGENTS.md](AGENTS.md)** — critical non-obvious patterns, footguns, and testing constraints for AI agents
-- **[DEMO_RUNBOOK.md](DEMO_RUNBOOK.md)** — step-by-step demo guide (Bob Shell / GitHub Actions PR review demo)
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — onboarding guide for new contributors
+- **[docs/getting-started.md](docs/getting-started.md)** — step-by-step tutorial for new developers
+- **[docs/architecture.md](docs/architecture.md)** — deep-dive into architectural decisions
 - **[e2e/README.md](e2e/README.md)** — e2e test knobs and coverage details
 - **[scripts/README.md](scripts/README.md)** — deployment script reference
 
