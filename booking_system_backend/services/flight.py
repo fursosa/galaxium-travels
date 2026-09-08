@@ -1,3 +1,9 @@
+"""Flight service — query, filter, and sort available flights.
+
+All public functions follow the project convention of returning
+``SomeModel | ErrorResponse`` rather than raising exceptions.
+"""
+
 from datetime import datetime
 
 from sqlalchemy import Integer, and_, func, or_
@@ -8,6 +14,17 @@ from schemas import ErrorResponse, FlightOut
 
 
 def _flight_to_out(f: Flight) -> FlightOut:
+    """Convert a Flight ORM object to a FlightOut schema with computed prices.
+
+    Business and Galaxium prices are calculated from ``base_price`` using the
+    fixed multipliers (2.5× and 5×).  Economy price equals ``base_price``.
+
+    Args:
+        f: A SQLAlchemy ``Flight`` model instance.
+
+    Returns:
+        ``FlightOut`` Pydantic model ready for serialisation.
+    """
     return FlightOut(
         flight_id=f.flight_id,
         origin=f.origin,

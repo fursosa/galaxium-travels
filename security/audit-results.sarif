@@ -1,0 +1,498 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ASVS Security Audit",
+          "version": "1.0.0",
+          "informationUri": "https://owasp.org/www-project-application-security-verification-standard/",
+          "rules": [
+            {
+              "id": "ASVS-V4.1.3",
+              "name": "UserResourceOwnershipEnforcement",
+              "shortDescription": {
+                "text": "V4.1.3 — Users can only access their own resources; other users' data is not accessible."
+              },
+              "fullDescription": {
+                "text": "Verify that the principle of least privilege exists — users should only be able to access functions, data files, URLs, controllers, services, and other resources for which they possess specific authorization. This implies protection against spoofing and elevation of privilege."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "access-control", "asvs-v4"]
+              }
+            },
+            {
+              "id": "ASVS-V4.1.5",
+              "name": "DenyByDefault",
+              "shortDescription": {
+                "text": "V4.1.5 — Access control denies by default; unauthenticated requests are rejected."
+              },
+              "fullDescription": {
+                "text": "Verify that access controls fail securely including when an exception occurs. Access control decisions should deny access unless explicitly permitted."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "access-control", "asvs-v4"]
+              }
+            },
+            {
+              "id": "ASVS-V4.2.1",
+              "name": "IDORProtection",
+              "shortDescription": {
+                "text": "V4.2.1 — Sensitive resources cannot be accessed by manipulating a predictable object ID (IDOR protection)."
+              },
+              "fullDescription": {
+                "text": "Verify that sensitive data and APIs are protected against Insecure Direct Object Reference (IDOR) attacks that target creation, reading, updating, and deletion of records, such as creating or updating someone else's record, viewing everyone's records, or deleting all records."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "access-control", "idor", "asvs-v4"]
+              }
+            },
+            {
+              "id": "ASVS-V5.1.1",
+              "name": "InputLengthConstraints",
+              "shortDescription": {
+                "text": "V5.1.1 — All string inputs have defined maximum length constraints."
+              },
+              "fullDescription": {
+                "text": "Verify that the application has defenses against HTTP parameter pollution attacks, particularly if the application framework makes no distinction about the source of request parameters (GET, POST, cookies, headers, or environment variables)."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "input-validation", "asvs-v5"]
+              }
+            },
+            {
+              "id": "ASVS-V13.1.3",
+              "name": "NoPIIInQueryParameters",
+              "shortDescription": {
+                "text": "V13.1.3 — API endpoints do not accept credentials or PII in URL query parameters."
+              },
+              "fullDescription": {
+                "text": "Verify that API URLs do not expose sensitive information, such as API keys, session tokens, passwords, or PII. Query parameters are recorded in server logs, browser history, and may leak via the Referer header."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "api-security", "pii", "asvs-v13"]
+              }
+            },
+            {
+              "id": "ASVS-V14.4.1",
+              "name": "SecurityResponseHeaders",
+              "shortDescription": {
+                "text": "V14.4.1 — HTTP responses include appropriate security headers such as Content-Security-Policy, X-Frame-Options, and X-Content-Type-Options."
+              },
+              "fullDescription": {
+                "text": "Verify that every HTTP response contains a Content-Type header, and that the specified content type matches the actual content. Verify that appropriate security headers including Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, and Strict-Transport-Security are present on all responses."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "http-headers", "asvs-v14"]
+              }
+            },
+            {
+              "id": "ASVS-V14.5.3",
+              "name": "CORSAllowlistRequired",
+              "shortDescription": {
+                "text": "V14.5.3 — CORS origin is validated against an explicit allowlist; wildcard origins are not permitted."
+              },
+              "fullDescription": {
+                "text": "Verify that the CORS Origin header is validated against an allowlist of trusted domains. A wildcard origin (*) must not be used, especially when credentials are allowed, as this permits any origin to make credentialed cross-origin requests."
+              },
+              "helpUri": "https://owasp.org/www-project-application-security-verification-standard/",
+              "properties": {
+                "tags": ["security", "cors", "http-headers", "asvs-v14"]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "ASVS-V4.1.3",
+          "level": "error",
+          "message": {
+            "text": "Finding 1: GET /bookings/{user_id} returns all bookings for any user ID supplied by the caller; there is no check that the authenticated principal owns the requested user_id. Fix: Require an authenticated session token and verify that the token's subject matches the requested user_id before querying the database."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 169,
+                  "endLine": 172
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Critical"
+          }
+        },
+        {
+          "ruleId": "ASVS-V4.1.5",
+          "level": "error",
+          "message": {
+            "text": "Finding 2: No authentication middleware or dependency exists anywhere in the FastAPI application; every endpoint is reachable by unauthenticated requests, which violates the deny-by-default principle. Fix: Add an authentication dependency (e.g. OAuth 2 / JWT bearer validation via Depends(verify_token)) and apply it globally via an app.dependency_overrides default or per-router dependency."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 44,
+                  "endLine": 337
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Critical"
+          }
+        },
+        {
+          "ruleId": "ASVS-V4.2.1",
+          "level": "error",
+          "message": {
+            "text": "Finding 3: POST /cancel/{booking_id} accepts any integer booking_id; cancel_booking() fetches and cancels the booking without verifying that the caller is the booking's owner, enabling any user to cancel another user's booking by guessing or iterating IDs. Fix: After fetching the booking, compare booking.user_id against the authenticated caller's identity and return HTTP 403 if they do not match."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 175,
+                  "endLine": 186
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/services/booking.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 93,
+                  "endLine": 123
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Critical"
+          }
+        },
+        {
+          "ruleId": "ASVS-V4.2.1",
+          "level": "error",
+          "message": {
+            "text": "Finding 4: POST /internal/bookings/from-hold is publicly reachable via the internet; it accepts raw traveler data and creates a real booking — an unauthenticated attacker can forge bookings by calling this endpoint directly. Fix: Restrict this endpoint to internal network traffic only (e.g. via a network policy or reverse-proxy ACL), or add a shared-secret header that only the Java service knows and validate it in the handler."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 221,
+                  "endLine": 237
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Critical"
+          }
+        },
+        {
+          "ruleId": "ASVS-V4.2.1",
+          "level": "error",
+          "message": {
+            "text": "Finding 5: POST /quotes/{quoteId}/holds, POST /holds/{holdId}/confirm, and POST /holds/{holdId}/release carry no authentication annotation or Spring Security filter; any caller who guesses a UUID can confirm or release another user's hold. Fix: Integrate Spring Security, add @PreAuthorize on sensitive methods, and validate hold ownership against the authenticated caller's identity."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/api/HoldController.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 19,
+                  "endLine": 70
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "High"
+          }
+        },
+        {
+          "ruleId": "ASVS-V5.1.1",
+          "level": "warning",
+          "message": {
+            "text": "Finding 6: BookingRequest.name is declared as a plain str with no max_length constraint, allowing arbitrarily long strings that can cause excessive memory use or denial-of-service via oversized payloads. Fix: Add name: str = Field(..., max_length=200) and import Field from pydantic."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/schemas.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 52,
+                  "endLine": 53
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Medium"
+          }
+        },
+        {
+          "ruleId": "ASVS-V5.1.1",
+          "level": "warning",
+          "message": {
+            "text": "Finding 7: UserRegistration.name and UserRegistration.email are plain str fields with no length upper bound, enabling oversized registration payloads. Fix: Apply Field(..., max_length=200) to name and Field(..., max_length=254) (the RFC 5321 limit) to email."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/schemas.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 71,
+                  "endLine": 72
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Medium"
+          }
+        },
+        {
+          "ruleId": "ASVS-V5.1.1",
+          "level": "error",
+          "message": {
+            "text": "Finding 8: Three endpoints (/internal/bookings/from-hold, POST /quotes, POST /quotes/{id}/holds) accept dict as their request body type, which means FastAPI performs no schema validation, length constraints, or type checking on the incoming JSON. Fix: Define typed Pydantic models (HoldBookingRequest, CreateQuoteRequest) for each endpoint and replace dict with the appropriate model."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 222,
+                  "endLine": 222
+                }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "message": { "text": "POST /quotes — raw dict body" },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": { "startLine": 243, "endLine": 243 }
+              }
+            },
+            {
+              "id": 2,
+              "message": { "text": "POST /quotes/{id}/holds — raw dict body" },
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": { "startLine": 274, "endLine": 274 }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "High"
+          }
+        },
+        {
+          "ruleId": "ASVS-V5.1.1",
+          "level": "warning",
+          "message": {
+            "text": "Finding 9: seatClass has no @Pattern constraint to restrict it to valid values (economy/business/galaxium), and quantity has @Min(1) but no @Max, allowing arbitrarily large seat quantities. Fix: Add @Pattern(regexp = \"^(economy|business|galaxium)$\") to seatClass and @Max(9) (or a business-appropriate upper bound) to quantity."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/api/dto/CreateQuoteRequest.java",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 21,
+                  "endLine": 24
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Medium"
+          }
+        },
+        {
+          "ruleId": "ASVS-V13.1.3",
+          "level": "error",
+          "message": {
+            "text": "Finding 10: GET /user?name=Alice&email=alice@example.com accepts the user's name and email address as URL query parameters; these values are logged by web servers, stored in browser history, and may leak via Referer headers to third-party resources. Fix: Change the endpoint to POST /user with a Pydantic request body, or pass name and email in HTTP headers; never accept PII or credentials in query strings."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 202,
+                  "endLine": 213
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "High"
+          }
+        },
+        {
+          "ruleId": "ASVS-V13.1.3",
+          "level": "error",
+          "message": {
+            "text": "Finding 11: FastApiMCP(app) mounts MCP tool bindings for every FastAPI route — including all unauthenticated booking, cancellation, and user-lookup routes — with no authentication or authorisation boundary, expanding the unauthenticated attack surface to AI-agent callers. Fix: Pass an auth_middleware or restrict MCP tool exposure to non-sensitive routes; at minimum, ensure the MCP mount is placed behind the same authentication layer as the REST API once auth is added."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 336,
+                  "endLine": 337
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "High"
+          }
+        },
+        {
+          "ruleId": "ASVS-V14.4.1",
+          "level": "warning",
+          "message": {
+            "text": "Finding 12: No Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, or Strict-Transport-Security headers are set on any HTTP response; the application is vulnerable to clickjacking, MIME-type sniffing attacks, and cross-site scripting amplification. Fix: Add a custom Starlette middleware (or use the 'secure' / 'starlette-security-headers' package) that injects X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Content-Security-Policy: default-src 'self', and Strict-Transport-Security: max-age=31536000; includeSubDomains on every response."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 44,
+                  "endLine": 61
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "Medium"
+          }
+        },
+        {
+          "ruleId": "ASVS-V14.5.3",
+          "level": "error",
+          "message": {
+            "text": "Finding 13: CORS_ORIGINS defaults to \"*\" when not set, and CORSMiddleware is configured with allow_origins=[\"*\"] and allow_credentials=True; this combination sends a wildcard Access-Control-Allow-Origin header to all requestors and signals intent to allow credentialed requests from any origin. Fix: Set CORS_ORIGINS to an explicit comma-separated allowlist of known frontend origins (e.g. https://galaxium.example.com) and remove the \"*\" default; keep allow_credentials=True only if the frontend genuinely requires it."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "booking_system_backend/server.py",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 53,
+                  "endLine": 61
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "High"
+          }
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "booking_system_backend/server.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_backend/services/booking.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_backend/schemas.py",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/api/HoldController.java",
+            "uriBaseId": "%SRCROOT%"
+          }
+        },
+        {
+          "location": {
+            "uri": "booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/api/dto/CreateQuoteRequest.java",
+            "uriBaseId": "%SRCROOT%"
+          }
+        }
+      ],
+      "columnKind": "utf16CodeUnits"
+    }
+  ]
+}

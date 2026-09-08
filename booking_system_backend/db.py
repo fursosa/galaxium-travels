@@ -24,9 +24,25 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
+    """Create all database tables defined in the ORM models.
+
+    Safe to call on every startup — SQLAlchemy only creates tables that
+    don't already exist (``CREATE TABLE IF NOT EXISTS`` semantics).
+    """
     Base.metadata.create_all(bind=engine)
 
+
 def get_db():
+    """FastAPI dependency that yields a database session per request.
+
+    Opens a ``SessionLocal`` session, yields it to the route handler, and
+    closes it in the ``finally`` block regardless of whether the handler
+    raised an exception.  Use this with ``Depends(get_db)`` in route
+    signatures.
+
+    Yields:
+        Session: An active SQLAlchemy ORM session bound to ``engine``.
+    """
     db = SessionLocal()
     try:
         yield db

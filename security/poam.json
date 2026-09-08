@@ -1,0 +1,787 @@
+{
+  "plan-of-action-and-milestones": {
+    "uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+    "metadata": {
+      "title": "Galaxium Travels — ASVS Level 1 Plan of Action and Milestones",
+      "last-modified": "2025-07-14T00:00:00Z",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2",
+      "remarks": "Generated from audit-findings.md. Scope: Python/FastAPI backend, Java Spring Boot hold service. Controls audited: V4 (Access Control), V5 (Input Validation), V13 (API Security), V14 (HTTP Headers/CORS)."
+    },
+    "system-id": {
+      "identifier-type": "https://galaxium-travels.example.com/system-ids",
+      "id": "galaxium-travels"
+    },
+    "poam-items": [
+      {
+        "uuid": "f1a00001-aaaa-4000-8001-000000000001",
+        "title": "IDOR on GET /bookings/{user_id} — unauthenticated caller can enumerate any user's bookings",
+        "description": "ASVS V4.1.3: GET /bookings/{user_id} returns all bookings for any caller-supplied user ID without verifying that the authenticated principal owns that user_id, enabling horizontal privilege escalation.",
+        "props": [
+          { "name": "severity", "value": "critical" },
+          { "name": "asvs-control", "value": "V4.1.3" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00001-aaaa-4000-8001-000000000001",
+            "subject-reference": {
+              "type": "component",
+              "title": "V4.1.3 — Users can only access their own resources"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00001-aaaa-4000-8001-000000000001"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00001-aaaa-4000-8001-000000000001",
+            "type": "milestone",
+            "title": "Add ownership check to GET /bookings/{user_id}",
+            "description": "File: booking_system_backend/server.py, lines 169–172. The handler currently calls the service and returns the result with no identity check. Add a JWT bearer dependency (e.g. `Depends(verify_token)`) that extracts the caller's subject claim and compare it to the path parameter `user_id`. If they do not match, raise `HTTPException(status_code=403, detail='Forbidden')` before the DB query is executed. The `verify_token` function should decode and validate the JWT using `python-jose` or `authlib`, reading the secret/public key from an environment variable.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00002-aaaa-4000-8002-000000000002",
+        "title": "No authentication middleware — entire FastAPI application is unauthenticated",
+        "description": "ASVS V4.1.5: No authentication dependency, middleware, or decorator exists anywhere in server.py; every endpoint is reachable by unauthenticated requests, violating the deny-by-default principle.",
+        "props": [
+          { "name": "severity", "value": "critical" },
+          { "name": "asvs-control", "value": "V4.1.5" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00002-aaaa-4000-8002-000000000002",
+            "subject-reference": {
+              "type": "component",
+              "title": "V4.1.5 — Access control denies by default"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00002-aaaa-4000-8002-000000000002"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00002-aaaa-4000-8002-000000000002",
+            "type": "milestone",
+            "title": "Introduce global authentication dependency in FastAPI",
+            "description": "File: booking_system_backend/server.py, lines 44–337. Create a new file `booking_system_backend/auth.py` containing an async function `verify_token(token: str = Depends(oauth2_scheme))` that validates an OAuth 2 JWT bearer token (decode with `python-jose`, verify signature against a public key or shared secret stored in the `JWT_SECRET` environment variable, and raise `HTTPException(401)` on failure). In server.py, import `verify_token` and attach it as a default router dependency: either pass `dependencies=[Depends(verify_token)]` to every `APIRouter`, or add it as `app.dependency_overrides` so all routes inherit it. The `/health` and `/register` endpoints may be explicitly exempted by passing `dependencies=[]` at the route level.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00003-aaaa-4000-8003-000000000003",
+        "title": "IDOR on POST /cancel/{booking_id} — any caller can cancel another user's booking",
+        "description": "ASVS V4.2.1: cancel_booking() fetches the booking and cancels it without comparing the booking's user_id against the authenticated caller's identity, enabling any authenticated user to cancel bookings they do not own by iterating IDs.",
+        "props": [
+          { "name": "severity", "value": "critical" },
+          { "name": "asvs-control", "value": "V4.2.1" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00003-aaaa-4000-8003-000000000003",
+            "subject-reference": {
+              "type": "component",
+              "title": "V4.2.1 — IDOR protection on sensitive resources"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00003-aaaa-4000-8003-000000000003"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00003-aaaa-4000-8003-000000000003",
+            "type": "milestone",
+            "title": "Add ownership assertion to POST /cancel/{booking_id}",
+            "description": "File: booking_system_backend/server.py lines 175–186 and booking_system_backend/services/booking.py lines 93–123. In server.py, inject the authenticated caller's user_id from the JWT subject (via `Depends(verify_token)`). Pass `caller_id` as an additional argument to `cancel_booking()`. In services/booking.py, after the DB fetch of the booking (currently line ~97), add: `if booking.user_id != caller_id: return ErrorResponse(error='Forbidden', status_code=403)`. In server.py's cancel handler, check `isinstance(result, ErrorResponse)` and raise `HTTPException(status_code=result.status_code, detail=result.error)` if true.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00004-aaaa-4000-8004-000000000004",
+        "title": "POST /internal/bookings/from-hold is publicly reachable — unauthenticated booking forgery",
+        "description": "ASVS V4.2.1: The internal endpoint that converts holds into real bookings is internet-facing and carries no authentication, allowing any attacker to forge arbitrary bookings by calling it directly.",
+        "props": [
+          { "name": "severity", "value": "critical" },
+          { "name": "asvs-control", "value": "V4.2.1" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00004-aaaa-4000-8004-000000000004",
+            "subject-reference": {
+              "type": "component",
+              "title": "V4.2.1 — IDOR protection on sensitive resources"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00004-aaaa-4000-8004-000000000004"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00004-aaaa-4000-8004-000000000004",
+            "type": "milestone",
+            "title": "Protect POST /internal/bookings/from-hold with a shared-secret header",
+            "description": "File: booking_system_backend/server.py lines 221–237. Add a dependency function `verify_internal_secret(x_internal_token: str = Header(...))` that reads a shared secret from the `INTERNAL_API_SECRET` environment variable and raises `HTTPException(403)` if the header value does not match. Apply this dependency to the `/internal/bookings/from-hold` route handler. In the Java service, file booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/client/PythonBackendClient.java, add the same header value (read from the `INTERNAL_API_SECRET` environment variable) to every outbound request to `/internal/bookings/from-hold`. The secret must be at least 32 bytes of cryptographically random data, set via a Docker/ECS secret at deploy time.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00005-aaaa-4000-8005-000000000005",
+        "title": "Java HoldController has no authentication — hold operations accessible to any caller",
+        "description": "ASVS V4.2.1: POST /quotes/{quoteId}/holds, POST /holds/{holdId}/confirm, and POST /holds/{holdId}/release carry no Spring Security annotations or filter; any caller who knows or guesses a UUID can confirm or release another user's hold.",
+        "props": [
+          { "name": "severity", "value": "high" },
+          { "name": "asvs-control", "value": "V4.2.1" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00005-aaaa-4000-8005-000000000005",
+            "subject-reference": {
+              "type": "component",
+              "title": "V4.2.1 — IDOR protection on sensitive resources"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00005-aaaa-4000-8005-000000000005"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00005-aaaa-4000-8005-000000000005",
+            "type": "milestone",
+            "title": "Add Spring Security and @PreAuthorize to HoldController",
+            "description": "File: booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/api/HoldController.java lines 19–70. Add `spring-boot-starter-security` and `spring-boot-starter-oauth2-resource-server` to pom.xml. Create a `SecurityConfig.java` in the `com.galaxium.holdservice` package that configures `HttpSecurity` to require a valid JWT bearer token for all hold and confirm endpoints, using `.oauth2ResourceServer(oauth2 -> oauth2.jwt(...))`. Annotate the `confirmHold` and `releaseHold` methods with `@PreAuthorize(\"isAuthenticated()\")`. In `HoldService`, retrieve the caller's subject from `SecurityContextHolder` and compare it against the `userId` stored on the `Hold` entity, throwing `AccessDeniedException` on mismatch.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00006-aaaa-4000-8006-000000000006",
+        "title": "BookingRequest.name has no max_length — oversized payloads accepted",
+        "description": "ASVS V5.1.1: BookingRequest.name is a plain str with no max_length constraint, allowing arbitrarily long strings that can cause excessive memory use or denial-of-service via oversized payloads.",
+        "props": [
+          { "name": "severity", "value": "medium" },
+          { "name": "asvs-control", "value": "V5.1.1" },
+          { "name": "milestone", "value": "sprint-2" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00006-aaaa-4000-8006-000000000006",
+            "subject-reference": {
+              "type": "component",
+              "title": "V5.1.1 — All string inputs have defined maximum length constraints"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00006-aaaa-4000-8006-000000000006"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00006-aaaa-4000-8006-000000000006",
+            "type": "milestone",
+            "title": "Add max_length=200 to BookingRequest.name in schemas.py",
+            "description": "File: booking_system_backend/schemas.py lines 52–53. Ensure `from pydantic import BaseModel, Field` is imported (add `Field` if not already present). Change the field declaration from `name: str` to `name: str = Field(..., max_length=200)`. No other changes are required; Pydantic will automatically return HTTP 422 with a descriptive error when a request exceeds the limit.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-28T00:00:00Z",
+                "end": "2025-08-11T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00007-aaaa-4000-8007-000000000007",
+        "title": "UserRegistration.name and .email have no max_length — oversized registration payloads accepted",
+        "description": "ASVS V5.1.1: UserRegistration.name and UserRegistration.email are plain str fields with no length upper bound, enabling oversized registration payloads.",
+        "props": [
+          { "name": "severity", "value": "medium" },
+          { "name": "asvs-control", "value": "V5.1.1" },
+          { "name": "milestone", "value": "sprint-2" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00007-aaaa-4000-8007-000000000007",
+            "subject-reference": {
+              "type": "component",
+              "title": "V5.1.1 — All string inputs have defined maximum length constraints"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00007-aaaa-4000-8007-000000000007"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00007-aaaa-4000-8007-000000000007",
+            "type": "milestone",
+            "title": "Add max_length constraints to UserRegistration fields in schemas.py",
+            "description": "File: booking_system_backend/schemas.py lines 71–72. Ensure `Field` is imported from pydantic. Change `name: str` to `name: str = Field(..., max_length=200)` and `email: str` to `email: str = Field(..., max_length=254)` (254 is the RFC 5321 maximum email address length). These two changes are sufficient; Pydantic returns HTTP 422 automatically on violation.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-28T00:00:00Z",
+                "end": "2025-08-11T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00008-aaaa-4000-8008-000000000008",
+        "title": "Three proxy endpoints accept raw dict bodies — no schema validation performed",
+        "description": "ASVS V5.1.1: /internal/bookings/from-hold, POST /quotes, and POST /quotes/{id}/holds accept dict as their request body type, bypassing all Pydantic validation, length constraints, and type checking.",
+        "props": [
+          { "name": "severity", "value": "high" },
+          { "name": "asvs-control", "value": "V5.1.1" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00008-aaaa-4000-8008-000000000008",
+            "subject-reference": {
+              "type": "component",
+              "title": "V5.1.1 — All string inputs have defined maximum length constraints"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00008-aaaa-4000-8008-000000000008"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00008-aaaa-4000-8008-000000000008",
+            "type": "milestone",
+            "title": "Replace dict body types with typed Pydantic models for proxy endpoints",
+            "description": "File: booking_system_backend/server.py lines 222, 243, 274 and booking_system_backend/schemas.py. In schemas.py, add three new Pydantic models: (1) `HoldBookingRequest` with fields `hold_id: str = Field(..., max_length=36)`, `user_id: int`, `traveler_name: str = Field(..., max_length=200)`, `traveler_email: str = Field(..., max_length=254)`; (2) `CreateQuoteRequest` with fields `flight_id: int`, `seat_class: str = Field(..., pattern='^(economy|business|galaxium)$')`, `quantity: int = Field(..., ge=1, le=9)`, `user_id: int`; (3) `CreateHoldRequest` with field `user_id: int`. In server.py, import these models and replace `body: dict` with `body: HoldBookingRequest`, `body: CreateQuoteRequest`, and `body: CreateHoldRequest` in the respective route signatures. Access body fields as attributes (`body.hold_id`) rather than dict keys (`body['hold_id']`) when forwarding to the Java service.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00009-aaaa-4000-8009-000000000009",
+        "title": "Java CreateQuoteRequest lacks seatClass allowlist and quantity upper bound",
+        "description": "ASVS V5.1.1: seatClass has no @Pattern constraint to restrict it to valid values, and quantity has @Min(1) but no @Max, allowing arbitrarily large seat quantities that could exhaust inventory or cause downstream arithmetic overflow.",
+        "props": [
+          { "name": "severity", "value": "medium" },
+          { "name": "asvs-control", "value": "V5.1.1" },
+          { "name": "milestone", "value": "sprint-2" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00009-aaaa-4000-8009-000000000009",
+            "subject-reference": {
+              "type": "component",
+              "title": "V5.1.1 — All string inputs have defined maximum length constraints"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00009-aaaa-4000-8009-000000000009"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00009-aaaa-4000-8009-000000000009",
+            "type": "milestone",
+            "title": "Add @Pattern and @Max to CreateQuoteRequest in Java hold service",
+            "description": "File: booking_system_inventory_hold_service/src/main/java/com/galaxium/holdservice/api/dto/CreateQuoteRequest.java lines 21 and 24. Add `import jakarta.validation.constraints.Max;` and `import jakarta.validation.constraints.Pattern;` to the import block. On the `seatClass` field (line 21) add `@Pattern(regexp = \"^(economy|business|galaxium)$\", message = \"seatClass must be economy, business, or galaxium\")`. On the `quantity` field (line 24) add `@Max(value = 9, message = \"quantity must not exceed 9\")`. Verify that `@Validated` or `@Valid` is already present on the controller method parameter in QuoteController.java; if not, add `@Valid` to the `@RequestBody CreateQuoteRequest request` parameter.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-28T00:00:00Z",
+                "end": "2025-08-11T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00010-aaaa-4000-8010-000000000010",
+        "title": "GET /user accepts PII (name, email) as URL query parameters",
+        "description": "ASVS V13.1.3: The user-lookup endpoint accepts name and email as URL query parameters, which are logged by web servers, stored in browser history, and may leak to third parties via Referer headers.",
+        "props": [
+          { "name": "severity", "value": "high" },
+          { "name": "asvs-control", "value": "V13.1.3" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00010-aaaa-4000-8010-000000000010",
+            "subject-reference": {
+              "type": "component",
+              "title": "V13.1.3 — API endpoints do not accept credentials or PII in URL query parameters"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00010-aaaa-4000-8010-000000000010"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00010-aaaa-4000-8010-000000000010",
+            "type": "milestone",
+            "title": "Change GET /user to POST /user with a Pydantic request body",
+            "description": "File: booking_system_backend/server.py lines 202–213. Replace `@app.get('/user')` with `@app.post('/user')`. Change the function signature from `async def get_user(name: str, email: str)` to `async def get_user(body: UserLookupRequest)` where `UserLookupRequest` is a new Pydantic model in schemas.py with fields `name: str = Field(..., max_length=200)` and `email: str = Field(..., max_length=254)`. Update the call to the service function to pass `body.name` and `body.email`. In booking_system_frontend/src/services/api.ts, update the corresponding call from a GET with query params to a POST with a JSON body. Any MCP tool that wraps this endpoint should also be updated to use POST.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00011-aaaa-4000-8011-000000000011",
+        "title": "FastApiMCP exposes all unauthenticated routes to AI-agent callers without an auth boundary",
+        "description": "ASVS V13.1.3: FastApiMCP(app) mounts MCP tool bindings for every FastAPI route including all unauthenticated booking, cancellation, and user-lookup routes, expanding the unauthenticated attack surface to AI-agent callers.",
+        "props": [
+          { "name": "severity", "value": "high" },
+          { "name": "asvs-control", "value": "V13.1.3" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00011-aaaa-4000-8011-000000000011",
+            "subject-reference": {
+              "type": "component",
+              "title": "V13.1.3 — API endpoints do not accept credentials or PII in URL query parameters"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00011-aaaa-4000-8011-000000000011"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00011-aaaa-4000-8011-000000000011",
+            "type": "milestone",
+            "title": "Restrict MCP tool exposure to authenticated routes only",
+            "description": "File: booking_system_backend/server.py lines 336–337. Once the global authentication dependency (POA&M item f1a00002) is in place, ensure `FastApiMCP(app)` inherits it. If the `fastapi-mcp` library supports an `auth_middleware` constructor parameter, pass the `verify_token` dependency there. If not, use the `include_operations` or `exclude_operations` parameter to explicitly allowlist only the MCP tools that should be agent-accessible (e.g. flight search), and exclude booking-mutation and user-lookup tools from the MCP surface until auth is fully enforced.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00012-aaaa-4000-8012-000000000012",
+        "title": "No security response headers — application is vulnerable to clickjacking and MIME sniffing",
+        "description": "ASVS V14.4.1: No Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, or Strict-Transport-Security headers are set on any HTTP response, leaving the application exposed to clickjacking and cross-site scripting amplification.",
+        "props": [
+          { "name": "severity", "value": "medium" },
+          { "name": "asvs-control", "value": "V14.4.1" },
+          { "name": "milestone", "value": "sprint-2" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00012-aaaa-4000-8012-000000000012",
+            "subject-reference": {
+              "type": "component",
+              "title": "V14.4.1 — HTTP responses include appropriate security headers"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00012-aaaa-4000-8012-000000000012"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00012-aaaa-4000-8012-000000000012",
+            "type": "milestone",
+            "title": "Add security response headers middleware to server.py",
+            "description": "File: booking_system_backend/server.py after line 61 (after the CORSMiddleware block). Add a custom Starlette middleware class `SecurityHeadersMiddleware` in the same file or a new `booking_system_backend/middleware.py`. The middleware's `dispatch` method should call `await call_next(request)` and then set the following headers on the response: `response.headers['X-Frame-Options'] = 'DENY'`, `response.headers['X-Content-Type-Options'] = 'nosniff'`, `response.headers['Content-Security-Policy'] = \"default-src 'self'\"`, `response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'`. Register it with `app.add_middleware(SecurityHeadersMiddleware)` immediately after the CORS middleware block. No external package is required; `from starlette.middleware.base import BaseHTTPMiddleware` is already available via FastAPI.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-28T00:00:00Z",
+                "end": "2025-08-11T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f1a00013-aaaa-4000-8013-000000000013",
+        "title": "CORS wildcard origin with allow_credentials=True — all origins permitted",
+        "description": "ASVS V14.5.3: CORS_ORIGINS defaults to '*' when unset and CORSMiddleware is configured with allow_origins=['*'] and allow_credentials=True, signalling intent to allow credentialed requests from any origin.",
+        "props": [
+          { "name": "severity", "value": "high" },
+          { "name": "asvs-control", "value": "V14.5.3" },
+          { "name": "milestone", "value": "sprint-1" }
+        ],
+        "related-findings": [
+          {
+            "finding-uuid": "f1a00013-aaaa-4000-8013-000000000013",
+            "subject-reference": {
+              "type": "component",
+              "title": "V14.5.3 — CORS origin validated against explicit allowlist; wildcard not permitted"
+            }
+          }
+        ],
+        "origins": [
+          {
+            "actors": [
+              {
+                "type": "tool",
+                "actor-uuid": "a1b2c3d4-0001-4000-8000-000000000000",
+                "title": "ASVS Level 1 Audit"
+              }
+            ]
+          }
+        ],
+        "risk-links": [
+          {
+            "risk-uuid": "r1a00013-aaaa-4000-8013-000000000013"
+          }
+        ],
+        "remediation-tasks": [
+          {
+            "uuid": "t1a00013-aaaa-4000-8013-000000000013",
+            "type": "milestone",
+            "title": "Replace CORS wildcard with an explicit origin allowlist",
+            "description": "File: booking_system_backend/server.py lines 53 and 55–61. Change line 53 from `CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*')` to `CORS_ORIGINS = os.getenv('CORS_ORIGINS', '')`. Change the `allow_origins` argument on line 57 from `allow_origins=[CORS_ORIGINS]` to `allow_origins=[o.strip() for o in CORS_ORIGINS.split(',') if o.strip()]` so that the middleware receives a list of explicit origins. Set the `CORS_ORIGINS` environment variable in all deployment configurations (docker-compose.yml, scripts/aws/deploy-to-aws.sh, scripts/ibm/deploy-to-ibm.sh) to the actual frontend origin (e.g. `https://galaxium.example.com`). Keep `allow_credentials=True` only if the frontend genuinely sends credentials; otherwise set it to `False`.",
+            "associated-activities": [],
+            "responsible-roles": [
+              { "role-id": "developer" }
+            ],
+            "timing": {
+              "within-date-range": {
+                "start": "2025-07-14T00:00:00Z",
+                "end": "2025-07-28T00:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "risks": [
+      {
+        "uuid": "r1a00001-aaaa-4000-8001-000000000001",
+        "title": "Horizontal privilege escalation via unenforced user-ID ownership on booking lookup",
+        "description": "Any unauthenticated network-reachable caller can enumerate all bookings for any user by iterating integer user IDs.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00002-aaaa-4000-8002-000000000002",
+        "title": "Complete lack of authentication allows unrestricted access to all API endpoints",
+        "description": "The entire FastAPI application is accessible without any credentials, violating deny-by-default and exposing all booking and user data.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00003-aaaa-4000-8003-000000000003",
+        "title": "Any authenticated user can cancel another user's booking by guessing a booking ID",
+        "description": "The cancellation endpoint does not compare the booking owner against the caller, enabling unsanctioned data modification.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00004-aaaa-4000-8004-000000000004",
+        "title": "Publicly reachable internal endpoint allows attackers to forge arbitrary bookings",
+        "description": "The from-hold booking creation endpoint carries no authentication, allowing any attacker to insert arbitrary booking records.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00005-aaaa-4000-8005-000000000005",
+        "title": "Unauthenticated hold operations enable hold hijacking across all users",
+        "description": "Any caller who knows or can guess a hold UUID can confirm or release another user's hold in the Java service.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00006-aaaa-4000-8006-000000000006",
+        "title": "Unbounded booking name field can be exploited for denial-of-service via oversized payloads",
+        "description": "Absence of a max_length constraint on BookingRequest.name allows attackers to send arbitrarily large payloads.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00007-aaaa-4000-8007-000000000007",
+        "title": "Unbounded registration fields enable oversized payload attacks on the user registration endpoint",
+        "description": "No length limit on name and email fields in UserRegistration allows memory exhaustion via crafted registration requests.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00008-aaaa-4000-8008-000000000008",
+        "title": "Unvalidated dict bodies on proxy endpoints accept malformed or malicious JSON without rejection",
+        "description": "Three proxy endpoints bypass Pydantic validation, allowing type confusion, missing fields, and oversized values to reach the Java service.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00009-aaaa-4000-8009-000000000009",
+        "title": "Unconstrained seatClass and quantity values in Java DTO allow invalid and abusive inputs",
+        "description": "Missing allowlist and upper bound permit invalid seat classes and arbitrarily large quantities that could corrupt pricing or exhaust seat inventory.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00010-aaaa-4000-8010-000000000010",
+        "title": "PII in URL query parameters is recorded in server logs and browser history",
+        "description": "User name and email passed as query parameters are captured in access logs and browser history, risking unintended data exposure.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00011-aaaa-4000-8011-000000000011",
+        "title": "MCP tool surface exposes all unauthenticated routes to AI agent callers",
+        "description": "The MCP mount has no authentication boundary, meaning AI agents can invoke booking-mutation and user-lookup tools without credentials.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00012-aaaa-4000-8012-000000000012",
+        "title": "Missing security response headers expose the application to clickjacking and MIME-sniffing attacks",
+        "description": "Absence of X-Frame-Options, X-Content-Type-Options, CSP, and HSTS allows browser-based attacks against end users.",
+        "status": "open"
+      },
+      {
+        "uuid": "r1a00013-aaaa-4000-8013-000000000013",
+        "title": "Wildcard CORS origin with credentials signals acceptance of cross-origin requests from any domain",
+        "description": "The permissive CORS configuration allows any website to make credentialed cross-origin requests to the API, enabling CSRF-style attacks.",
+        "status": "open"
+      }
+    ]
+  }
+}

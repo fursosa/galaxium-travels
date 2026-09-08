@@ -1,3 +1,10 @@
+"""Booking service — create, cancel, and retrieve flight bookings.
+
+All public functions return a Union type (``SomeModel | ErrorResponse``)
+rather than raising exceptions.  Callers must use
+``isinstance(result, ErrorResponse)`` to detect failures.
+"""
+
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
@@ -13,8 +20,41 @@ SEAT_CLASS_MULTIPLIERS = {
 }
 
 
-def book_flight(db: Session, user_id: int, name: str, flight_id: int, seat_class: SeatClass = 'economy') -> BookingOut | ErrorResponse:
-    """Book a seat on a specific flight for a user in the specified seat class."""
+def book_flight(
+    db: Session,
+    user_id: int,
+    name: str,
+    flight_id: int,
+    seat_class: SeatClass = 'economy',
+) -> BookingOut | ErrorResponse:
+    """Book a seat on a specific flight for a user in the specified seat class.
+
+    Validates in order: seat class, flight existence, seat availability, then
+    user identity.  **Both** ``user_id`` and ``name`` must match the stored
+    record — a valid ID with the wrong name returns ``NAME_MISMATCH``.
+
+    On success, decrements the seat counter for the chosen class and commits
+    a new ``Booking`` row.
+
+    Args:
+        db: SQLAlchemy database session.
+        user_id: ID of the traveller making the booking.
+        name: Full name of the traveller — must match ``User.name`` for
+            the given ``user_id``.
+        flight_id: ID of the flight to book.
+        seat_class: One of ``"economy"`` (default), ``"business"``, or
+            ``"galaxium"``.
+
+    Returns:
+        ``BookingOut`` with the new booking details on success.
+        ``ErrorResponse`` with one of the following error codes on failure:
+
+        - ``INVALID_SEAT_CLASS`` — unrecognised seat class string.
+        - ``FLIGHT_NOT_FOUND`` — no flight with the given ID.
+        - ``NO_SEATS_AVAILABLE`` — chosen class is sold out.
+        - ``NAME_MISMATCH`` — user ID exists but name doesn't match.
+        - ``USER_NOT_FOUND`` — no user with the given ID.
+    """
     # Validate seat class
     if seat_class not in SEAT_CLASS_MULTIPLIERS:
         return ErrorResponse(
